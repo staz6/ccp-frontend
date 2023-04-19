@@ -12,11 +12,11 @@ import DashboardAppPage from './pages/DashboardAppPage';
 
 // ----------------------------------------------------------------------
 
-export default function Router() {
+export default function Router({isAuth}) {
   const routes = useRoutes([
     {
       path: '/dashboard',
-      element: <DashboardLayout />,
+      element: isAuth ? <DashboardLayout /> : <Navigate to="/login" />,
       children: [
         { element: <Navigate to="/dashboard/app" />, index: true },
         { path: 'app', element: <DashboardAppPage /> },
@@ -27,7 +27,7 @@ export default function Router() {
     },
     {
       path: 'login',
-      element: <LoginPage />,
+      element: !isAuth ? <LoginPage /> : <Navigate to="/dashboard/app" />,
     },
     {
       element: <SimpleLayout />,
@@ -45,3 +45,4 @@ export default function Router() {
 
   return routes;
 }
+

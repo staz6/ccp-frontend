@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 // routes
@@ -7,17 +9,26 @@ import ThemeProvider from './theme';
 // components
 import { StyledChart } from './components/chart';
 import ScrollToTop from './components/scroll-to-top';
+import { useAuth } from './context/AuthContext';
+import Loader from './components/Loader';
 
 // ----------------------------------------------------------------------
 
 export default function App() {
+  const { currentUser,getCurrentUser } = useAuth();
+  const isAuth = currentUser
+  useEffect(() => {
+    getCurrentUser()
+  },[])
   return (
     <HelmetProvider>
       <BrowserRouter>
         <ThemeProvider>
           <ScrollToTop />
           <StyledChart />
-          <Router />
+          {
+            currentUser !== null ? <Router isAuth={isAuth}/> : <Loader/>
+          }
         </ThemeProvider>
       </BrowserRouter>
     </HelmetProvider>

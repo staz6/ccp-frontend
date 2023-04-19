@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 // @mui
 import {
   Card,
@@ -21,6 +21,16 @@ import {
   IconButton,
   TableContainer,
   TablePagination,
+  Box,
+  Tabs,
+  Tab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  Input,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 // components
 import Label from '../components/label';
@@ -29,122 +39,121 @@ import Scrollbar from '../components/scrollbar';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 // mock
-import USERLIST from '../_mock/user';
+import { useAuth } from '../context/AuthContext';
+import { getFileAws, getFileAzure, uploadFileAws, uploadFileAzure } from '../endpoints';
+import AwsFilesDialog from '../components/dialogs/AwsFilesDialog';
+import AzureFileDialog from '../components/dialogs/AzureFileDialog';
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', alignRight: false },
-  { id: 'company', label: 'Company', alignRight: false },
-  { id: 'role', label: 'Role', alignRight: false },
-  { id: 'isVerified', label: 'Verified', alignRight: false },
+  { id: 'created', label: 'created', alignRight: false },
+  { id: 'files', label: 'Files', alignRight: false },
   { id: 'status', label: 'Status', alignRight: false },
   { id: '' },
 ];
 
 // ----------------------------------------------------------------------
 
-function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
+function a11yProps(index) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
 }
 
-function getComparator(order, orderBy) {
-  return order === 'desc'
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
-function applySortFilter(array, comparator, query) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-  if (query) {
-    return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
-  }
-  return stabilizedThis.map((el) => el[0]);
-}
 
 export default function UserPage() {
+  const {currentUser,getCurrentUser} = useAuth()
+  const [tabValue, setTabValue] = useState(0);
+  const [storage,setStorage] =useState(currentUser.s3Buckets)
+  const [resourceProvider, setResourceProvider]=useState('AWS')
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadFileDialog,setUploadFileDialog]=useState(false)
+  const [bucketName,setBucketName] = useState('')
+  const [awsFileDialog,setAwsFileDialog]=useState(false)
+  const [azureFileDialog,setAzureFileDialog]=useState(false)
+
+  const [fileData,setFileData]=useState([]);
+
+  useEffect(()=>{
+    getCurrentUser()
+  },[])
+  const handleFileChange = (e) => {
+    if (e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      alert('Please select a file to upload.');
+      return;
+    }
+    if(resourceProvider === 'AWS'){
+      const formData = new FormData();
+      formData.append('name', bucketName);
+      formData.append('file', selectedFile);
+      await uploadFileAws(formData)
+    }
+    if(resourceProvider === 'Azure'){
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('name', bucketName);
+      await uploadFileAzure(formData)
+    }
+  };
+  const handleTabValue = (event, newValue) => {
+    setTabValue(newValue);
+  };
   const [open, setOpen] = useState(null);
 
-  const [page, setPage] = useState(0);
-
-  const [order, setOrder] = useState('asc');
-
-  const [selected, setSelected] = useState([]);
-
-  const [orderBy, setOrderBy] = useState('name');
-
-  const [filterName, setFilterName] = useState('');
-
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-
-  const handleOpenMenu = (event) => {
-    setOpen(event.currentTarget);
+  const handleOpenMenu = (e,name) => {
+    setBucketName(name)
+    setOpen(e.target);
   };
 
   const handleCloseMenu = () => {
     setOpen(null);
   };
 
-  const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
+  useEffect(() => {
+    if(resourceProvider === 'AWS') setStorage(currentUser.s3Buckets);
+    if(resourceProvider === 'Azure') setStorage(currentUser.storageAccounts);
+  },[resourceProvider])
 
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      const newSelecteds = USERLIST.map((n) => n.name);
-      setSelected(newSelecteds);
-      return;
+  const handleGetFiles = (name) => {
+    if(resourceProvider === 'AWS'){
+      getFileAws(name).then((res)=>{
+        setFileData(res.data)
+        setAwsFileDialog(true)
+      }).catch(()=>{
+        setFileData([])
+        setAwsFileDialog(false)
+      })
     }
-    setSelected([]);
-  };
-
-  const handleClick = (event, name) => {
-    const selectedIndex = selected.indexOf(name);
-    let newSelected = [];
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
+    if(resourceProvider === 'Azure'){
+      getFileAzure(name).then((res)=>{
+        setFileData(res.data)
+        setAzureFileDialog(true)
+      }).catch(()=>{
+        setFileData([])
+        setAzureFileDialog(false)
+      })
     }
-    setSelected(newSelected);
-  };
+  }
+  
+ 
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
 
-  const handleChangeRowsPerPage = (event) => {
-    setPage(0);
-    setRowsPerPage(parseInt(event.target.value, 10));
-  };
 
-  const handleFilterByName = (event) => {
-    setPage(0);
-    setFilterName(event.target.value);
-  };
+ 
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
+ 
 
-  const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
 
-  const isNotFound = !filteredUsers.length && !!filterName;
+
 
   return (
     <>
@@ -153,111 +162,67 @@ export default function UserPage() {
       </Helmet>
 
       <Container>
+        <Box sx={{ width: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs value={tabValue} onChange={handleTabValue} aria-label="basic tabs example">
+              <Tab label="Storage Space" {...a11yProps(0)} />
+              <Tab label="Virutal Machines" {...a11yProps(1)} />
+            </Tabs>
+          </Box>
+        </Box>
+
+        <br/>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
-            User
+            {
+              tabValue === 0 ? 'Storage Space' : 'Virtual Machines'
+            }
           </Typography>
-          <Button variant="contained" startIcon={<Iconify icon="eva:plus-fill" />}>
-            New User
-          </Button>
         </Stack>
 
         <Card>
-          <UserListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
+          <UserListToolbar resourceProvider={resourceProvider} setResourceProvider={setResourceProvider} />
 
           <Scrollbar>
             <TableContainer sx={{ minWidth: 800 }}>
               <Table>
                 <UserListHead
-                  order={order}
-                  orderBy={orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={USERLIST.length}
-                  numSelected={selected.length}
-                  onRequestSort={handleRequestSort}
-                  onSelectAllClick={handleSelectAllClick}
                 />
                 <TableBody>
-                  {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { id, name, role, status, company, avatarUrl, isVerified } = row;
-                    const selectedUser = selected.indexOf(name) !== -1;
+                  {storage.map((row) => {
+                    const { id, name, launchTime, status } = row;
 
                     return (
-                      <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
+                      <TableRow hover key={id} tabIndex={-1} role="checkbox" >
                         <TableCell padding="checkbox">
-                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
+                          {}
                         </TableCell>
 
-                        <TableCell component="th" scope="row" padding="none">
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar alt={name} src={avatarUrl} />
-                            <Typography variant="subtitle2" noWrap>
-                              {name}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
+                        <TableCell align="left">{name}</TableCell>
 
-                        <TableCell align="left">{company}</TableCell>
-
-                        <TableCell align="left">{role}</TableCell>
-
-                        <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
+                        <TableCell align="left">{launchTime}</TableCell>
 
                         <TableCell align="left">
-                          <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
+                          <Label sx={{cursor:"pointer"}} onClick={()=>{handleGetFiles(name)}}>Get Files</Label>
+                        </TableCell>
+                        <TableCell align="left">
+                          {status ? 'Active' : 'Deleted'}
                         </TableCell>
 
                         <TableCell align="right">
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
+                          <IconButton size="large" color="inherit" onClick={(e)=>{handleOpenMenu(e,name)}}>
                             <Iconify icon={'eva:more-vertical-fill'} />
                           </IconButton>
                         </TableCell>
                       </TableRow>
                     );
                   })}
-                  {emptyRows > 0 && (
-                    <TableRow style={{ height: 53 * emptyRows }}>
-                      <TableCell colSpan={6} />
-                    </TableRow>
-                  )}
                 </TableBody>
-
-                {isNotFound && (
-                  <TableBody>
-                    <TableRow>
-                      <TableCell align="center" colSpan={6} sx={{ py: 3 }}>
-                        <Paper
-                          sx={{
-                            textAlign: 'center',
-                          }}
-                        >
-                          <Typography variant="h6" paragraph>
-                            Not found
-                          </Typography>
-
-                          <Typography variant="body2">
-                            No results found for &nbsp;
-                            <strong>&quot;{filterName}&quot;</strong>.
-                            <br /> Try checking for typos or using complete words.
-                          </Typography>
-                        </Paper>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                )}
               </Table>
             </TableContainer>
           </Scrollbar>
 
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={USERLIST.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
         </Card>
       </Container>
 
@@ -279,9 +244,9 @@ export default function UserPage() {
           },
         }}
       >
-        <MenuItem>
+        <MenuItem onClick={()=>{setUploadFileDialog(true)}}>
           <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
-          Edit
+          Upload file
         </MenuItem>
 
         <MenuItem sx={{ color: 'error.main' }}>
@@ -289,6 +254,33 @@ export default function UserPage() {
           Delete
         </MenuItem>
       </Popover>
+
+      <Dialog open={uploadFileDialog} onClose={() => {setUploadFileDialog(false)}}>
+        <DialogTitle>Upload file</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Please select a file that you want to upload
+          </DialogContentText>
+          <TextField
+            margin="dense"
+            fullWidth
+            value={bucketName}
+          />
+          <Input
+            margin="dense"
+            type="file"
+            fullWidth
+            onChange={handleFileChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {setUploadFileDialog(false)}}>Cancel</Button>
+          <Button onClick={handleUpload}>Submit</Button>
+        </DialogActions>
+      </Dialog>
+      <AwsFilesDialog data={fileData} open={awsFileDialog} setOpen={setAwsFileDialog}/>
+      <AzureFileDialog data={fileData} open={azureFileDialog} setOpen={setAzureFileDialog}/>
+
     </>
   );
 }
