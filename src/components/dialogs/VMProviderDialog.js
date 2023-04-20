@@ -12,6 +12,7 @@ import {
   Select,
   TextField,
 } from '@mui/material';
+import { deployec2 } from '../../endpoints';
 
 // The calculateOptimalProvider function should be imported here
 
@@ -76,11 +77,15 @@ const VmProviderDialog = ({openVm,setOpenVm}) => {
   }
   
   
-  const handleSubmit = () => {
-    const optimalProvider = calculateOptimalVMProvider(windowType, instanceType);
-    setResourceProvider(optimalProvider)
-    // setResult(`Optimal Cloud Provider: ${optimalProvider}`);
-    // setOpen(false);
+  const handleSubmit = async () => {
+    if(resouceProvider === '' || resourceName === ''){
+      const optimalProvider = calculateOptimalVMProvider(windowType, instanceType);
+      setResourceProvider(optimalProvider)
+    }
+    if(resouceProvider !== '' || resourceName !== ''){
+      await deployec2(resourceName)
+      handleClose()
+    }
   };
 
   return (
@@ -140,7 +145,7 @@ const VmProviderDialog = ({openVm,setOpenVm}) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>{resouceProvider === '' ? 'Calulate' : 'Deploy' }</Button>
+          <Button onClick={handleSubmit}>{resouceProvider === '' || resourceName === '' ? 'Calulate' : 'Deploy' }</Button>
         </DialogActions>
       </Dialog>
       

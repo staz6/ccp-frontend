@@ -71,7 +71,7 @@ const StorageProviderDialog = ({openStorage,setOpenStorage}) => {
     return optimalProvider;
   }
   const handleSubmit = async () => {
-    if(resouceProvider === ''){
+    if(resouceProvider === '' || resourceName === ''){
       const optimalProvider = calculateOptimalProvider(storageSize, accessFrequency);
     setResourceProvider(optimalProvider)
     }
@@ -143,7 +143,7 @@ const StorageProviderDialog = ({openStorage,setOpenStorage}) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>{resouceProvider === '' ? 'Calulate' : 'Deploy' }</Button>
+          <Button onClick={handleSubmit}>{resouceProvider === '' || resourceName === '' ? 'Calulate' : 'Deploy' }</Button>
         </DialogActions>
       </Dialog>
       

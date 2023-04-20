@@ -29,5 +29,19 @@ export const getFileAzure = (name) => axios.get(`sA/getFiles/${name}`)
 
 
 
+export const deployec2 = (name) => axios.post('ec2/deploy',{
+	"imageId":"ami-006dcf34c09e50022",
+	"instanceType":"t3.micro",
+	"name":name
+})
+
+
+
+export const stopInstance = (instance) => axios.put('/ec2/stop',{instanceId:instance})
+export const restartInstance = (instance) => axios.put('/ec2/restart',{instanceId:instance})
+export const terminateInstance = (instance) => axios.put('/ec2/terminate',{instanceId:instance})
+export const desctibeInstance = (instance) => axios.post('/ec2/describe',{instanceId:instance})
+
+
 
 

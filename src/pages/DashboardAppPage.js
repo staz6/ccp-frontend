@@ -1,11 +1,15 @@
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { faker } from '@faker-js/faker';
 // @mui
 import { useTheme } from '@mui/material/styles';
 import { Grid, Container, Typography } from '@mui/material';
 // components
-import Iconify from '../components/iconify';
 // sections
+import awsIcon from '@iconify/icons-logos/aws';
+import azureIcon from '@iconify/icons-logos/azure';
+import savingsIcon from '@iconify/icons-ic/baseline-attach-money';
+import expensesIcon from '@iconify/icons-ic/baseline-money-off';
 import {
   AppTasks,
   AppNewsUpdate,
@@ -17,11 +21,19 @@ import {
   AppCurrentSubject,
   AppConversionRates,
 } from '../sections/@dashboard/app';
+import Iconify from '../components/iconify';
+import { useAuth } from '../context/AuthContext';
 
 // ----------------------------------------------------------------------
 
 export default function DashboardAppPage() {
   const theme = useTheme();
+  const {currentUser,getCurrentUser} = useAuth()
+
+
+  useEffect(()=>{
+    getCurrentUser()
+  },[])
 
   return (
     <>
@@ -36,19 +48,19 @@ export default function DashboardAppPage() {
 
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Weekly Sales" total={714000} icon={'ant-design:android-filled'} />
+            <AppWidgetSummary title="AWS Resources" total={currentUser?.ec2Instances.length + currentUser?.s3Buckets.length} icon={awsIcon} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="New Users" total={1352831} color="info" icon={'ant-design:apple-filled'} />
+            <AppWidgetSummary title="Azure Resources" total={currentUser?.storageAccounts.length } color="info" icon={azureIcon} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Item Orders" total={1723315} color="warning" icon={'ant-design:windows-filled'} />
+            <AppWidgetSummary title="Amount Saved" total={'8%'} color="warning" icon={savingsIcon} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Bug Reports" total={234} color="error" icon={'ant-design:bug-filled'} />
+            <AppWidgetSummary title="Amount Spent" total={'234$'} color="error" icon={expensesIcon} />
           </Grid>
 
           <Grid item xs={12} md={6} lg={8}>
