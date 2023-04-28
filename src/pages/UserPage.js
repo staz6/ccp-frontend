@@ -34,6 +34,7 @@ import {
   TextField,
 } from '@mui/material';
 // components
+import { useSnackbar } from 'notistack';
 import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
@@ -93,8 +94,9 @@ function a11yProps(index) {
 
 
 export default function UserPage() {
-  const {currentUser,getCurrentUser} = useAuth()
+  const {currentUser,getCurrentUser,setLoading} = useAuth()
   const [tabValue, setTabValue] = useState(0);
+  const { enqueueSnackbar } = useSnackbar();
   const [storage,setStorage] =useState(currentUser.s3Buckets)
   const [resourceProvider, setResourceProvider]=useState('AWS')
   const [selectedFile, setSelectedFile] = useState(null);
@@ -116,6 +118,7 @@ export default function UserPage() {
   })
 
 const handleDescribe = async () => {
+  setLoading(true);
   handleCloseMenu();
   const {data} = await desctibeInstance(instance);
   const currentInstance = currentUser.ec2Instances.find(x=>x.instanceId===instance);
@@ -126,6 +129,8 @@ const handleDescribe = async () => {
     key:currentInstance.keyMaterial,
   })
   setDescribeDialogOpen(true);
+  enqueueSnackbar('Request submitted successfully',{variant:"success"})
+  setLoading(false)
 };
 
 const handleCloseDescribeDialog = () => {
@@ -144,20 +149,31 @@ const handleCloseDescribeDialog = () => {
   const handleUpload = async () => {
     if (!selectedFile) {
       alert('Please select a file to upload.');
-      return;
+      
     }
-    if(resourceProvider === 'AWS'){
-      const formData = new FormData();
-      formData.append('name', bucketName);
-      formData.append('file', selectedFile);
-      await uploadFileAws(formData)
+    
+    else{
+      setLoading(true);
+      try{
+        if(resourceProvider === 'AWS'){
+          const formData = new FormData();
+          formData.append('name', bucketName);
+          formData.append('file', selectedFile);
+          await uploadFileAws(formData)
+        }
+        if(resourceProvider === 'Azure'){
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          formData.append('name', bucketName);
+          await uploadFileAzure(formData)
+        }
+        enqueueSnackbar('File uploaded successfully',{variant:"success"})
+      }catch(err){
+        enqueueSnackbar(err,{variant:"error"})
+      }
+      setLoading(false);
     }
-    if(resourceProvider === 'Azure'){
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('name', bucketName);
-      await uploadFileAzure(formData)
-    }
+    
   };
   const handleTabValue = (event, newValue) => {
     setTabValue(newValue);
@@ -190,35 +206,48 @@ const handleCloseDescribeDialog = () => {
   },[tabValue])
 
   const handleGetFiles = (name) => {
-    if(resourceProvider === 'AWS'){
-      getFileAws(name).then((res)=>{
-        setFileData(res.data)
-        setAwsFileDialog(true)
-      }).catch(()=>{
-        setFileData([])
-        setAwsFileDialog(false)
-      })
-    }
-    if(resourceProvider === 'Azure'){
-      getFileAzure(name).then((res)=>{
-        setFileData(res.data)
-        setAzureFileDialog(true)
-      }).catch(()=>{
-        setFileData([])
-        setAzureFileDialog(false)
-      })
-    }
+    setLoading(true)
+      if(resourceProvider === 'AWS'){
+        getFileAws(name).then((res)=>{
+          setLoading(false)
+          setFileData(res.data)
+          setAwsFileDialog(true)
+          enqueueSnackbar('Files retrieve successfully',{variant:"success"})
+        }).catch((err)=>{
+          setFileData([])
+          setAwsFileDialog(false)
+          enqueueSnackbar(err,{variant:"error"})
+           setLoading(false)
+        })
+      }
+      if(resourceProvider === 'Azure'){
+        getFileAzure(name).then((res)=>{
+          setLoading(false)
+          setFileData(res.data)
+          setAzureFileDialog(true)
+          enqueueSnackbar('Files retrieve successfully',{variant:"success"})
+        }).catch((err)=>{
+          setFileData([])
+          setAzureFileDialog(false)
+          enqueueSnackbar(err,{variant:"error"})
+          setLoading(false)
+        })
+      }
+   
   }
 
   const updateInstance = async (command) =>{
-    if(command === 'stop'){
-      await stopInstance(instance)
-    } else if(command === 'restart'){
-      await restartInstance(instance)
-    } else if (command === 'terminate'){
-      await terminateInstance(instance)
-    }
-    await getCurrentUser()
+   setLoading(true)
+   if(command === 'stop'){
+    await stopInstance(instance)
+  } else if(command === 'restart'){
+    await restartInstance(instance)
+  } else if (command === 'terminate'){
+    await terminateInstance(instance)
+  }
+  await getCurrentUser()
+  enqueueSnackbar(`${command  } successfully`,{variant:"success"})
+   setLoading(false)
   }
   
  

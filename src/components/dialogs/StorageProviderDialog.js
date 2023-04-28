@@ -12,6 +12,7 @@ import {
   Select,
   TextField,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { deployStorageAccount,deloys3Bucket } from '../../endpoints';
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,7 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const StorageProviderDialog = ({openStorage,setOpenStorage}) => {
   const {setLoading } = useAuth();
-
+  const { enqueueSnackbar } = useSnackbar();
   const [storageSize, setStorageSize] = useState('');
   const [accessFrequency, setAccessFrequency] = useState('');
   const [resouceProvider,setResourceProvider]=useState('')
@@ -79,16 +80,23 @@ const StorageProviderDialog = ({openStorage,setOpenStorage}) => {
       const optimalProvider = calculateOptimalProvider(storageSize, accessFrequency);
     setResourceProvider(optimalProvider)
     }
-    if(resouceProvider !== '' && resourceName !== ''){
-      setLoading(true)
-      if(resouceProvider === 'AWS'){
-        await deloys3Bucket(resourceName)
-        handleClose()
+    try{
+      if(resouceProvider !== '' && resourceName !== ''){
+        setLoading(true)
+        if(resouceProvider === 'AWS'){
+          await deloys3Bucket(resourceName)
+          handleClose()
+        }
+        if(resouceProvider === 'Azure'){
+          await deployStorageAccount(resourceName)
+          handleClose()
+        }
+        setLoading(false)
+        enqueueSnackbar('Cloud storage deployed successfully', { variant: 'success' })
       }
-      if(resouceProvider === 'Azure'){
-        await deployStorageAccount(resourceName)
-        handleClose()
-      }
+    }catch(err){
+      console.log(err)
+      enqueueSnackbar(err, { variant: 'error' })
       setLoading(false)
     }
     // setOpen(false);

@@ -12,6 +12,7 @@ import {
   Select,
   TextField,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { deployec2 } from '../../endpoints';
 import { useAuth } from '../../context/AuthContext';
 
@@ -19,6 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const VmProviderDialog = ({openVm,setOpenVm}) => {
   const {setLoading } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
   const [windowType,setWindowType]=useState("")
   const [instanceType,setInstanceType]=useState("")
   const [resouceProvider,setResourceProvider]=useState("")
@@ -84,11 +86,17 @@ const VmProviderDialog = ({openVm,setOpenVm}) => {
       const optimalProvider = calculateOptimalVMProvider(windowType, instanceType);
       setResourceProvider(optimalProvider)
     }
-    if(resouceProvider !== '' || resourceName !== ''){
-      setLoading(true)
-      await deployec2(resourceName)
+    try{
+      if(resouceProvider !== '' || resourceName !== ''){
+        setLoading(true)
+        await deployec2(resourceName)
+        setLoading(false)
+        handleClose()
+        enqueueSnackbar('Virtual machine deployed successfully', { variant: 'success' })
+      }
+    }catch(err){
+      enqueueSnackbar(err, { variant: 'error' })
       setLoading(false)
-      handleClose()
     }
   };
 
