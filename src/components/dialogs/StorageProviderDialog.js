@@ -13,10 +13,14 @@ import {
   TextField,
 } from '@mui/material';
 import { deployStorageAccount,deloys3Bucket } from '../../endpoints';
+import { useAuth } from '../../context/AuthContext';
+
 
 // The calculateOptimalProvider function should be imported here
 
 const StorageProviderDialog = ({openStorage,setOpenStorage}) => {
+  const {setLoading } = useAuth();
+
   const [storageSize, setStorageSize] = useState('');
   const [accessFrequency, setAccessFrequency] = useState('');
   const [resouceProvider,setResourceProvider]=useState('')
@@ -76,6 +80,7 @@ const StorageProviderDialog = ({openStorage,setOpenStorage}) => {
     setResourceProvider(optimalProvider)
     }
     if(resouceProvider !== '' && resourceName !== ''){
+      setLoading(true)
       if(resouceProvider === 'AWS'){
         await deloys3Bucket(resourceName)
         handleClose()
@@ -84,6 +89,7 @@ const StorageProviderDialog = ({openStorage,setOpenStorage}) => {
         await deployStorageAccount(resourceName)
         handleClose()
       }
+      setLoading(false)
     }
     // setOpen(false);
   };

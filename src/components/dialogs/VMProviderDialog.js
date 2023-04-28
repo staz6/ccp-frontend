@@ -13,10 +13,12 @@ import {
   TextField,
 } from '@mui/material';
 import { deployec2 } from '../../endpoints';
+import { useAuth } from '../../context/AuthContext';
 
 // The calculateOptimalProvider function should be imported here
 
 const VmProviderDialog = ({openVm,setOpenVm}) => {
+  const {setLoading } = useAuth();
   const [windowType,setWindowType]=useState("")
   const [instanceType,setInstanceType]=useState("")
   const [resouceProvider,setResourceProvider]=useState("")
@@ -83,7 +85,9 @@ const VmProviderDialog = ({openVm,setOpenVm}) => {
       setResourceProvider(optimalProvider)
     }
     if(resouceProvider !== '' || resourceName !== ''){
+      setLoading(true)
       await deployec2(resourceName)
+      setLoading(false)
       handleClose()
     }
   };

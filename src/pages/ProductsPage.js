@@ -31,7 +31,7 @@ export default function ProductsPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Products | Minimal UI </title>
+        <title> Dashboard: Products | Cloud Convergence CCP </title>
       </Helmet>
 
       <Container>

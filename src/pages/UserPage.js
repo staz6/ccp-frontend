@@ -235,7 +235,7 @@ const handleCloseDescribeDialog = () => {
   return (
     <>
       <Helmet>
-        <title> User | Minimal UI </title>
+        <title> User | Cloud Convergence CCP </title>
       </Helmet>
 
       <Container>

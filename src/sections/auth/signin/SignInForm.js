@@ -9,10 +9,12 @@ import { useAuth } from '../../../context/AuthContext';
 
 // ----------------------------------------------------------------------
 
-export default function LoginForm() {
-  const navigate = useNavigate();
-  const { signIn } = useAuth();
+export default function SignInForm() {
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [name,setName]=useState('');
+  const [username,setUsername]=useState('')
+  const [organization,setOrganization]=useState("")
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -30,12 +32,13 @@ export default function LoginForm() {
 
   const handleClick = async () => {
     try {
-      await signIn(email, password);
+      const result = await signUp(name,email, password,organization,username);
+      console.log(result)
     } catch (err) {
-      setError('Invalid email or password');
+      setError('Invalid request');
     }
   };
-
+  console.log(error)
   return (
     <>
       <Typography
@@ -49,11 +52,35 @@ export default function LoginForm() {
         {error}
       </Typography>
       <Stack spacing={3}>
+      <TextField
+          name="username"
+          label="Username"
+          onChange={(e) => {
+            setUsername(e.target.value);
+          }}
+        />
+
+      <TextField
+          name="name"
+          label="Full name"
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
+        />
+
         <TextField
           name="email"
           label="Email address"
           onChange={(e) => {
             setEmail(e.target.value);
+          }}
+        />
+
+<TextField
+          name="organization"
+          label="Organization Name"
+          onChange={(e) => {
+            setOrganization(e.target.value);
           }}
         />
 
@@ -84,7 +111,7 @@ export default function LoginForm() {
       </Stack>
 
       <LoadingButton fullWidth size="large" type="submit" variant="contained" onClick={handleClick}>
-        Login
+        Sign In
       </LoadingButton>
     </>
   );

@@ -11,11 +11,12 @@ import { StyledChart } from './components/chart';
 import ScrollToTop from './components/scroll-to-top';
 import { useAuth } from './context/AuthContext';
 import Loader from './components/Loader';
+import CustomLoadingAnimation from './components/CustomLoadingAnimation';
 
 // ----------------------------------------------------------------------
 
 export default function App() {
-  const { currentUser,getCurrentUser } = useAuth();
+  const { currentUser,getCurrentUser,loading } = useAuth();
   const isAuth = currentUser
   useEffect(() => {
     getCurrentUser()
@@ -25,9 +26,10 @@ export default function App() {
       <BrowserRouter>
         <ThemeProvider>
           <ScrollToTop />
+          <CustomLoadingAnimation isLoading={loading}/>
           <StyledChart />
           {
-            currentUser !== null ? <Router isAuth={isAuth}/> : <Loader/>
+            currentUser === null ? <Loader/> : <Router isAuth={isAuth}/> 
           }
         </ThemeProvider>
       </BrowserRouter>

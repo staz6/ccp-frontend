@@ -38,7 +38,7 @@ export default function DashboardAppPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard | Minimal UI </title>
+        <title> Dashboard | Cloud Convergence CCP </title>
       </Helmet>
 
       <Container maxWidth="xl">
@@ -56,11 +56,11 @@ export default function DashboardAppPage() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Amount Saved" total={'8%'} color="warning" icon={savingsIcon} />
+            <AppWidgetSummary title="Amount Saved" total={(currentUser?.ec2Instances.length + currentUser?.s3Buckets.length + currentUser?.storageAccounts.length) === 0 ? '0%' : "8%"} color="warning" icon={savingsIcon} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Amount Spent" total={'234$'} color="error" icon={expensesIcon} />
+            <AppWidgetSummary title="Amount Spent" total={(currentUser?.ec2Instances.length + currentUser?.s3Buckets.length + currentUser?.storageAccounts.length) === 0 ? '0%' : "234$"} color="error" icon={expensesIcon} />
           </Grid>
 
           <Grid item xs={12} md={6} lg={8}>
@@ -166,7 +166,7 @@ export default function DashboardAppPage() {
             />
           </Grid>
 
-          <Grid item xs={12} md={6} lg={4}>
+          {/* <Grid item xs={12} md={6} lg={4}>
             <AppOrderTimeline
               title="Order Timeline"
               list={[...Array(5)].map((_, index) => ({
@@ -223,7 +223,7 @@ export default function DashboardAppPage() {
                 { id: '5', label: 'Sprint Showcase' },
               ]}
             />
-          </Grid>
+          </Grid> */}
         </Grid>
       </Container>
     </>
